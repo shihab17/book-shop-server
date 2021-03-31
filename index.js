@@ -9,6 +9,7 @@ app.use(cors());
 app.use(bodyParser.json());
 
 const MongoClient = require('mongodb').MongoClient;
+const ObjectID = require('mongodb').ObjectID;
 console.log(process.env.DB_USER)
 app.get('/', (req, res) => {
   res.send('Hello World!')
@@ -18,11 +19,43 @@ const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASS}@cluster
 console.log(uri)
 const client = new MongoClient(uri, { useNewUrlParser: true, useUnifiedTopology: true });
 client.connect(err => {
-    console.log("error", err)
-  const collection = client.db("bookShop").collection("book");
+  console.log("error", err)
+  const bookCollection = client.db("bookShop").collection("book");
   // perform actions on the collection object
-  console.log("database  connected successfully")
-  client.close();
+  app.get('/books', (req,res) => {
+    bookCollection.find()
+    .toArray((err, books) =>{
+      res.send(books)
+    })
+  })
+
+  app.get('/book/:bookId', (req,res) => {
+    const bookId = ObjectID(req.params.bookId)
+    bookCollection.find({_id: bookId})
+    .toArray((err,book) => {
+      res.send(book)
+    })
+  })
+
+  app.delete('/deleteBook/:bookId', (req, res) => {
+    const bookId = ObjectID(req.params.bookId)
+    console.log("delete this", bookId)
+    bookCollection.findOneAndDelete({_id: bookId})
+    .then(documents => res.send(!!documents.value))
+  })
+
+  app.post('/addBook', (req, res) => {
+    const newBook = req.body;
+    console.log('adding new book ', newBook)
+    bookCollection.insertOne(newBook)
+      .then(result => {
+        console.log('inserted count', result.insertedCount)
+        res.send(result.insertedCount > 0)
+      })
+  })
+
+
+  // client.close();
 });
 
 app.listen(port, () => {
