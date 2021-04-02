@@ -21,27 +21,30 @@ const client = new MongoClient(uri, { useNewUrlParser: true, useUnifiedTopology:
 client.connect(err => {
   console.log("error", err)
   const bookCollection = client.db("bookShop").collection("book");
+  const cartCollection = client.db("bookShop").collection("cart");
+  const orderCollection = client.db("bookShop").collection("orders");
   // perform actions on the collection object
-  app.get('/books', (req,res) => {
+  app.get('/books', (req, res) => {
     bookCollection.find()
-    .toArray((err, books) =>{
-      res.send(books)
-    })
+      .toArray((err, books) => {
+        res.send(books)
+      })
   })
 
-  app.get('/book/:bookId', (req,res) => {
+  app.get('/book/:bookId', (req, res) => {
     const bookId = ObjectID(req.params.bookId)
-    bookCollection.find({_id: bookId})
-    .toArray((err,book) => {
-      res.send(book)
-    })
+    console.log(bookId)
+    bookCollection.find({ _id: bookId })
+      .toArray((err, book) => {
+        res.send(book)
+      })
   })
 
   app.delete('/deleteBook/:bookId', (req, res) => {
     const bookId = ObjectID(req.params.bookId)
     console.log("delete this", bookId)
-    bookCollection.findOneAndDelete({_id: bookId})
-    .then(documents => res.send(!!documents.value))
+    bookCollection.findOneAndDelete({ _id: bookId })
+      .then(documents => res.send(!!documents.value))
   })
 
   app.post('/addBook', (req, res) => {
@@ -54,6 +57,48 @@ client.connect(err => {
       })
   })
 
+  app.post('/addCart', (req, res) => {
+    const newCart = req.body;
+    console.log('adding new cart', newCart)
+    cartCollection.insertOne(newCart)
+      .then(result => {
+        console.log('inserted count', result.insertedCount)
+        res.send(result.insertedCount > 0)
+      })
+  })
+  app.get('/cart/:email', (req, res) => {
+    cartCollection.find({ "email": req.params.email })
+      .toArray((err, cart) => {
+        res.send(cart)
+      })
+  })
+
+  app.delete('/deleteCart/:email', (req, res) => {
+    const email = req.params.email;
+    cartCollection.deleteMany({ "email": email })
+      .then(result => {
+        console.log(result)
+        res.send(result)
+      })
+
+  })
+  app.post('/addOrder', (req, res) => {
+    const newOrder = req.body;
+    console.log("new order", newOrder)
+    orderCollection.insertOne(newOrder)
+      .then(result => {
+        console.log('inserted count', result.insertedCount)
+        res.send(result.insertedCount > 0)
+      })
+  })
+
+  app.get('/orders/:email',(req,res) => {
+    const email = req.params.email;
+    orderCollection.find({"email": email})
+    .toArray((err, orders) => {
+      res.send(orders)
+    })
+  })
 
   // client.close();
 });
