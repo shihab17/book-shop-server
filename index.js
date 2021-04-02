@@ -92,12 +92,12 @@ client.connect(err => {
       })
   })
 
-  app.get('/orders/:email',(req,res) => {
+  app.get('/orders/:email', (req, res) => {
     const email = req.params.email;
-    orderCollection.find({"email": email})
-    .toArray((err, orders) => {
-      res.send(orders)
-    })
+    orderCollection.find({ "email": email })
+      .toArray((err, orders) => {
+        res.send(orders)
+      })
   })
 
   // client.close();
